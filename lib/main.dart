@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/parameter_screen.dart';
+import 'screens/splash_screen.dart';
 import 'theme/app_theme.dart';
 
 void main() {
@@ -14,7 +14,7 @@ class DiabetesPredictionApp extends StatelessWidget {
     return MaterialApp(
       title: 'Diabetes Prediction UI',
       theme: AppTheme.lightTheme,
-      home: const ParameterScreen(),
+      home: const SplashScreen(),
       debugShowCheckedModeBanner: false,
     );
   }

@@ -1,73 +1,72 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../constants/colors.dart';
 
-class ParameterInputRow extends StatelessWidget {
+class ParameterInputRow extends StatefulWidget {
   final String hintText;
-  final VoidCallback? onYesNoPressed;
+  final TextEditingController? controller;
 
   const ParameterInputRow({
     Key? key,
     required this.hintText,
-    this.onYesNoPressed,
+    this.controller,
   }) : super(key: key);
 
   @override
+  State<ParameterInputRow> createState() => _ParameterInputRowState();
+}
+
+class _ParameterInputRowState extends State<ParameterInputRow> {
+  late FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        // Main Text Input Field
-        Expanded(
-          flex: 3,
-          child: Container(
-            height: 56,
-            decoration: BoxDecoration(
-              color: AppColors.inputBackground,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade300),
-            ),
-            child: TextField(
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                hintText: hintText,
-                hintStyle: TextStyle(color: Colors.grey.shade500),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        // Ya/Tidak Toggle Button
-        Expanded(
-          flex: 1,
-          child: Container(
-            height: 56,
-            decoration: BoxDecoration(
-              color: AppColors.inputBackground,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade300),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(8),
-                onTap: onYesNoPressed,
-                child: const Center(
-                  child: Text(
-                    'Ya/\nTidak',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 14,
-                      height: 1.2,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
+    return TextField(
+      controller: widget.controller,
+      focusNode: _focusNode,
+      keyboardType: TextInputType.number,
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
       ],
+      decoration: InputDecoration(
+        hintText: widget.hintText,
+        hintStyle: const TextStyle(color: AppColors.textHint),
+        filled: true,
+        fillColor: AppColors.inputBackground,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.inputBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.inputBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(
+            color: AppColors.primaryBlue,
+            width: 2,
+          ),
+        ),
+      ),
+      style: const TextStyle(
+        color: AppColors.textPrimary,
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+      ),
     );
   }
 }
