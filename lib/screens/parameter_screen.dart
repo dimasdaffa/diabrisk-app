@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../constants/colors.dart';
@@ -17,6 +18,18 @@ class _ParameterScreenState extends State<ParameterScreen> {
   // Buat 8 Controller untuk 8 parameter
   final List<TextEditingController> _controllers = List.generate(8, (_) => TextEditingController());
   bool _isLoading = false;
+  static const String _apiHost = 'diabete-predict-fastapi.onrender.com';
+
+  Future<bool> _hasInternetAccess() async {
+    try {
+      final probe = await http
+          .get(Uri.https('www.google.com', '/generate_204'))
+          .timeout(const Duration(seconds: 10));
+      return probe.statusCode == 204;
+    } catch (_) {
+      return false;
+    }
+  }
 
   // Fungsi Logika Rekomendasi Berdasarkan Inputan Teks Anda
   List<String> _getRecommendations(int prediction) {
@@ -43,29 +56,46 @@ class _ParameterScreenState extends State<ParameterScreen> {
   Future<void> _sendDataToApi() async {
     setState(() => _isLoading = true);
 
-    // PENTING: Gunakan 10.0.2.2 jika di Emulator Android. 
-    // Gunakan IP WiFi Laptop Anda (misal 192.168.1.x) jika menggunakan HP Fisik.
-    final url = Uri.parse('http://10.0.2.2:8000/predict'); 
+    // Endpoint API production (Render)
+    final url = Uri.https(_apiHost, '/predict');
+    final payload = jsonEncode({
+      "pregnancies": double.tryParse(_controllers[0].text) ?? 0.0,
+      "glucose": double.tryParse(_controllers[1].text) ?? 0.0,
+      "blood_pressure": double.tryParse(_controllers[2].text) ?? 0.0,
+      "skin_thickness": double.tryParse(_controllers[3].text) ?? 0.0,
+      "insulin": double.tryParse(_controllers[4].text) ?? 0.0,
+      "bmi": double.tryParse(_controllers[5].text) ?? 0.0,
+      "dpf": double.tryParse(_controllers[6].text) ?? 0.0,
+      "age": double.tryParse(_controllers[7].text) ?? 0.0,
+    });
 
     try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "pregnancies": double.tryParse(_controllers[0].text) ?? 0.0,
-          "glucose": double.tryParse(_controllers[1].text) ?? 0.0,
-          "blood_pressure": double.tryParse(_controllers[2].text) ?? 0.0,
-          "skin_thickness": double.tryParse(_controllers[3].text) ?? 0.0,
-          "insulin": double.tryParse(_controllers[4].text) ?? 0.0,
-          "bmi": double.tryParse(_controllers[5].text) ?? 0.0,
-          "dpf": double.tryParse(_controllers[6].text) ?? 0.0,
-          "age": double.tryParse(_controllers[7].text) ?? 0.0,
-        }),
-      );
+      http.Response response;
+      try {
+        response = await http
+            .post(
+              url,
+              headers: {"Content-Type": "application/json"},
+              body: payload,
+            )
+            .timeout(const Duration(seconds: 45));
+      } on SocketException {
+        // Retry sekali untuk kasus DNS/intermittent network di emulator/device.
+        response = await http
+            .post(
+              url,
+              headers: {"Content-Type": "application/json"},
+              body: payload,
+            )
+            .timeout(const Duration(seconds: 45));
+      }
 
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
-        int prediction = result['prediction'];
+        final dynamic predictionValue = result['prediction'];
+        final int prediction = predictionValue is int
+            ? predictionValue
+            : int.tryParse(predictionValue.toString()) ?? 0;
         
         List<String> recommendations = _getRecommendations(prediction);
         
@@ -84,9 +114,20 @@ class _ParameterScreenState extends State<ParameterScreen> {
         throw Exception("Server mengembalikan status: ${response.statusCode}");
       }
     } catch (e) {
+      String message = 'Gagal menghubungi server: $e';
+      if (e is SocketException) {
+        final hasInternet = await _hasInternetAccess();
+        if (hasInternet) {
+          message =
+              'Internet ada, tapi DNS ke host API gagal. Coba matikan Private DNS/VPN atau ganti jaringan. Host: $_apiHost';
+        } else {
+          message =
+              'Perangkat tidak memiliki akses internet. Cek koneksi emulator/device lalu coba lagi.';
+        }
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal menghubungi server: $e')),
+          SnackBar(content: Text(message)),
         );
       }
     } finally {
