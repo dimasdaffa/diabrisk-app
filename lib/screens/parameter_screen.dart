@@ -20,6 +20,15 @@ class _ParameterScreenState extends State<ParameterScreen> {
   bool _isLoading = false;
   static const String _apiHost = 'diabete-predict-fastapi.onrender.com';
 
+  @override
+  void initState() {
+    super.initState();
+    // listen ke semua controller supaya UI (tombol) update saat user mengetik
+    for (var c in _controllers) {
+      c.addListener(() => setState(() {}));
+    }
+  }
+
   Future<bool> _hasInternetAccess() async {
     try {
       final probe = await http
@@ -157,6 +166,20 @@ class _ParameterScreenState extends State<ParameterScreen> {
       controller.dispose();
     }
     super.dispose();
+  }
+
+  bool _areAllFieldsFilled() {
+    for (var c in _controllers) {
+      if (c.text.trim().isEmpty) return false;
+    }
+    return true;
+  }
+
+  void _clearAllFields() {
+    for (var c in _controllers) {
+      c.clear();
+    }
+    setState(() {});
   }
 
   @override
@@ -303,30 +326,44 @@ class _ParameterScreenState extends State<ParameterScreen> {
 
               const SizedBox(height: 32),
 
-              // Action Button
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton.icon(
-                  onPressed: _isLoading ? null : _sendDataToApi,
-                  icon: _isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
+              // Action Buttons: Submit + Clear All
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 52,
+                      child: ElevatedButton.icon(
+                        onPressed: (_isLoading || !_areAllFieldsFilled()) ? null : _sendDataToApi,
+                        icon: _isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.search, size: 20),
+                        label: Text(
+                          _isLoading ? 'Menganalisis...' : 'Mulai Skrining',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                           ),
-                        )
-                      : const Icon(Icons.search, size: 20),
-                  label: Text(
-                    _isLoading ? 'Menganalisis...' : 'Mulai Skrining',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    height: 52,
+                    child: OutlinedButton.icon(
+                      onPressed: _isLoading ? null : _clearAllFields,
+                      icon: const Icon(Icons.clear, size: 18),
+                      label: const Text('Clear All'),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
             ],
