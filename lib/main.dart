@@ -12,7 +12,7 @@ class DiabetesPredictionApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Diabetes Prediction UI',
+      title: 'Diabetes Prediction',
       theme: AppTheme.lightTheme,
       home: const SplashScreen(),
       debugShowCheckedModeBanner: false,
