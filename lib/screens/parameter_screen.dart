@@ -18,7 +18,7 @@ class _ParameterScreenState extends State<ParameterScreen> {
   // Buat 8 Controller untuk 8 parameter
   final List<TextEditingController> _controllers = List.generate(8, (_) => TextEditingController());
   bool _isLoading = false;
-  static const String _apiHost = 'diabete-predict-fastapi.onrender.com';
+  static const String _apiHost = '146.190.84.204:8000';
 
   @override
   void initState() {
@@ -65,8 +65,8 @@ class _ParameterScreenState extends State<ParameterScreen> {
   Future<void> _sendDataToApi() async {
     setState(() => _isLoading = true);
 
-    // Endpoint API production (Render)
-    final url = Uri.https(_apiHost, '/predict');
+    // Endpoint API production (self-hosted)
+    final url = Uri.http(_apiHost, '/predict');
     final payload = jsonEncode({
       "pregnancies": double.tryParse(_controllers[0].text) ?? 0.0,
       "glucose": double.tryParse(_controllers[1].text) ?? 0.0,
